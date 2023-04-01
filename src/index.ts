@@ -361,20 +361,22 @@ module.exports = {
               const code = context.getSourceCode().getText();
               const result = sortImportPlugin(code, mergeOptions);
 
-              if (
-                result.loc &&
-                result.allImportWithMessage.some((value) => {
-                  if (value?.message) {
-                    context.report({
-                      node: value.node,
-                      loc: value.node.loc,
-                      message: value.message,
-                    });
-                    return true;
-                  }
-                  return false;
-                })
-              ) {
+              if (!result.loc) return;
+              let flag = false;
+
+              result.allImportWithMessage.forEach((value) => {
+                if (value?.message) {
+                  flag = true;
+                  context.report({
+                    node: value.node,
+                    loc: value.node.loc,
+                    message: value.message,
+                  });
+                  return true;
+                }
+                return false;
+              });
+              if (flag) {
                 context.report({
                   loc: result.loc,
                   message: "Sort imports",
