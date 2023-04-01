@@ -231,6 +231,7 @@ function sortImports(body: ImportDeclaration[], options: TOptions) {
 
   return newCode;
 }
+
 type Position = {
   line: number;
   column: number;
@@ -243,14 +244,14 @@ type Loc = {
 
 const sortImportPlugin = (code: string, mergeOptions: TOptions) => {
   //handle options
-  const commentsCustom = mergeOptions.importOrder
+  const formatOptionsData = formatOptions(mergeOptions as any);
+  const commentsCustom = formatOptionsData.importOrder
     .map((value) => value?.[1])
     .filter(Boolean);
 
   //parse code
   const parseCode = parseCodeToAst(code);
   const allImports = getImportNodes(parseCode);
-  console.log({ code });
 
   let firstImportOrComment:
     | ImportDeclaration
@@ -286,12 +287,7 @@ const sortImportPlugin = (code: string, mergeOptions: TOptions) => {
     }
     return rest;
   });
-
-  const newCode = sortImports(newAllImports as any, mergeOptions).replace(
-    /[\n]*$/,
-    ""
-  );
-
+  const newCode = sortImports(newAllImports as any, formatOptionsData as any);
   const textToFirstImport = code.slice(0, firstImportLoc.start.index);
   const sortedImports = getImportNodes(
     parseCodeToAst(textToFirstImport + newCode)
@@ -302,14 +298,14 @@ const sortImportPlugin = (code: string, mergeOptions: TOptions) => {
     end: lastImportLoc.end,
   };
 
-  const allImportWithMessage = allImports.map((node) => {
+  //get order change
+  const allImportWithMessage = allImports.map((node, index) => {
     let newImport = sortedImports.find(
       (value) => value.source.value === node.source.value
     );
     if (!newImport) return;
-    const lineCurrent = node.loc?.end.line;
-    let lineNew = newImport.loc?.end.line;
-
+    const lineCurrent = node.loc?.start.line;
+    const lineNew = newImport.loc?.start.line;
     if (lineCurrent !== lineNew) {
       return {
         message: `Import ${node.source.value} moved from line ${lineCurrent} to line ${lineNew}`,
@@ -332,66 +328,33 @@ const sortImportPlugin = (code: string, mergeOptions: TOptions) => {
 const optionsDefault = {
   importOrder: [
     "<THIRD_PARTY_MODULES> --comment THIRD PARTY MODULES",
-    //regex
+
+    "(layout)|(components) --comment layout, component",
+    "(_@shared) --comment shared",
+
     "<RELATIVE_MODULES> --comment RELATIVE MODULES",
     "<TYPES_MODULES> --comment TYPES MODULES",
   ],
-  importOrderSeparation: true,
+  importOrderSeparation: false,
   importOrderSortByLength: true,
   importOrderSplitType: true,
   importWithSemicolon: false,
   // importOrderAddComments: true,
 };
 
-module.exports = {
-  rules: {
-    "sort-imports": {
-      meta: { fixable: "code" },
-      create(context) {
-        const options = context.options[0] || {};
-        const mergeOptions = {
-          ...formatOptions(optionsDefault),
-          ...formatOptions(options),
-        } as TOptions;
-        const pluginName = "plugin sort-imports wrongs";
+const code = `
+"use client"
+import GraphSection from '_@/layout/GraphSection'
+//test
+import WhoWeAreSection from '_@/layout/WhoWeAreSection'
+import InspiringSection from '_@/layout/InspiringSection'
+import SubscribeSection from '_@/layout/SubscribeSection'
+import BannerSection from '_@/layout/BannerSection'
+`;
 
-        return {
-          Program() {
-            try {
-              const code = context.getSourceCode().getText();
-              const result = sortImportPlugin(code, mergeOptions);
+const { allImportWithMessage, loc, newCode } = sortImportPlugin(
+  code,
+  optionsDefault
+);
 
-              if (
-                result.loc &&
-                result.allImportWithMessage.some((value) => {
-                  if (value?.message) {
-                    context.report({
-                      node: value.node,
-                      loc: value.node.loc,
-                      message: value.message,
-                    });
-                    return true;
-                  }
-                  return false;
-                })
-              ) {
-                context.report({
-                  loc: result.loc,
-                  message: "Sort imports",
-                  fix(fixer) {
-                    return fixer.replaceTextRange(
-                      [result.loc.start.index, result.loc.end.index],
-                      result.newCode
-                    );
-                  },
-                });
-              }
-            } catch (error) {
-              console.error(`Error in ${pluginName}:`, error);
-            }
-          },
-        };
-      },
-    },
-  },
-};
+console.log({ allImportWithMessage, loc, newCode });
