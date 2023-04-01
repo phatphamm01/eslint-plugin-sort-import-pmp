@@ -15,17 +15,12 @@
   "dependencies": {
     "@babel/core": "^7.12.0",
     "@babel/parser": "^7.12.0",
-    "@babel/traverse": "^7.21.2",
-    "@babel/types": "^7.12.3",
-    "babel-generator": "^6.26.0",
-    "babel-types": "^6.26.0",
-    "eslint-utils": "^3.0.0",
-    "prettier": "^2.2.1"
+    "babel-generator": "^6.26.0"
   },
   "devDependencies": {
+    "@babel/types": "^7.21.4",
     "@types/babel-generator": "^6.25.5",
     "@types/node": "^18.11.18",
-    "@types/prettier": "^2.7.2",
     "babel-cli": "^6.26.0",
     "nodemon": "^2.0.20",
     "ts-node": "^10.9.1",
