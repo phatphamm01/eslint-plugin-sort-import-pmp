@@ -19,7 +19,6 @@
   },
   "devDependencies": {
     "@babel/types": "^7.21.4",
-    "@types/babel-generator": "^6.25.5",
     "@types/node": "^18.11.18",
     "babel-cli": "^6.26.0",
     "nodemon": "^2.0.20",
